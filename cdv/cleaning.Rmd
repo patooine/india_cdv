@@ -1,0 +1,44 @@
+---
+title: "Initial Cleaning"
+output: html_notebook
+---
+
+## Init
+
+```{r load-packages, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(lubridate)
+library(tidyr)
+library(dplyr)
+library(readr)
+library(janitor)
+
+vac_data <- read_csv("vac_data.csv") %>%
+  clean_names()
+state_data <- read_csv("state_data.csv") %>%
+  clean_names()
+case_data <- read_csv("case_data.csv") %>%
+  clean_names()
+```
+
+## 1) Looking at Ladakh
+
+```{r}
+df1 <- vac_data %>%
+  select(updated_on, state, total_doses_administered)
+
+# omit null rows
+cols <- ncol(state_data)
+is_na <- is.na(state_data)
+row_na <- rowSums(is_na)
+df2 <- state_data[row_na != cols, ] %>% 
+  #select(!(estimated_per_capita_income_in_india_fy_2019_rs)) %>%
+  rename(state = state_name)
+
+df3 <- merge(x = df1, y = df2, by = "state", all.x = TRUE)
+df5 <- merge(x = df3, y = case_data, by = "state")
+
+df4 <- df3 %>%
+  filter(state == "Dadra and Nagar Haveli and Daman and Diu")
+```
+
