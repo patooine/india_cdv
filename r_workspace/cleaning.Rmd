@@ -33,7 +33,8 @@ df1 <- vac_data %>%
   rename(date = updated_on)
 
 case_data2 <- case_data %>%
-  select(date:tested)
+  select(date:tested) %>%
+  mutate(date = as.Date(date, "%m/%d/%Y"))
 
 # omit null rows
 cols <- ncol(state_data)
@@ -43,9 +44,10 @@ df2 <- state_data[row_na != cols, ] %>%
   #select(!(estimated_per_capita_income_in_india_fy_2019_rs)) %>%
   rename(state = state_name)
 
-df3 <- merge(x = df1, y = df2, by = "state", all = TRUE)
-df4 <- merge(x = df3, y = case_data2, by = c("state", "date"), all = TRUE)
-
+df3 <- merge(x = df1, y = df2, by = "state", all = TRUE) %>%
+  mutate(date = as.Date(date, "%d/%m/%Y"))
+df4 <- merge(x = df3, y = case_data2, by = c("state", "date"), all = TRUE) %>%
+  filter(!is.na(date))
 ```
 
 
