@@ -3,7 +3,7 @@ title: "Initial Cleaning"
 output: html_notebook
 ---
 
-## Init
+## Load packages and datasets
 
 ```{r load-packages, warning=FALSE, message=FALSE}
 library(tidyverse)
@@ -12,6 +12,10 @@ library(tidyr)
 library(dplyr)
 library(readr)
 library(janitor)
+library(ggplot2)
+library(scales)
+library(ggrepel)
+library(DT)
 
 vac_data <- read_csv("vac_data.csv") %>%
   clean_names()
@@ -21,11 +25,15 @@ case_data <- read_csv("case_data.csv") %>%
   clean_names()
 ```
 
-## 1) Looking at Ladakh
+## 1) Initial Cleaning
 
 ```{r}
 df1 <- vac_data %>%
-  select(updated_on, state, total_doses_administered)
+  select(updated_on, state, total_doses_administered) %>%
+  rename(date = updated_on)
+
+case_data2 <- case_data %>%
+  select(date:tested)
 
 # omit null rows
 cols <- ncol(state_data)
@@ -35,10 +43,48 @@ df2 <- state_data[row_na != cols, ] %>%
   #select(!(estimated_per_capita_income_in_india_fy_2019_rs)) %>%
   rename(state = state_name)
 
-df3 <- merge(x = df1, y = df2, by = "state", all.x = TRUE)
-df5 <- merge(x = df3, y = case_data, by = "state")
+df3 <- merge(x = df1, y = df2, by = "state", all = TRUE)
+df4 <- merge(x = df3, y = case_data2, by = c("state", "date"), all = TRUE)
 
-df4 <- df3 %>%
-  filter(state == "Dadra and Nagar Haveli and Daman and Diu")
+```
+
+
+```{r}
+df4[is.na(df4)] <- 0
+df5 <- df4 %>%
+  filter(state != "India") %>%
+  select(state, date, total_doses_administered, confirmed_infection:deceased) %>%
+  mutate(date = as.Date(date, "%m/%d/%Y"))
+```
+
+## 2) Plots
+
+```{r}
+ggplot(data = df5,mapping = aes(x = date, y = confirmed_infection,
+                     color = state, label = state, group = state)) +
+  geom_line(size = 0.7, alpha = 0.8, show.legend = FALSE) +
+  scale_color_viridis_d() +
+  # better formatting for y-axis
+  scale_y_continuous(labels = label_comma()) +
+  # use minimal theme
+  theme_minimal()
+
+ggplot(data = df5, mapping = aes(x = date, y = deceased,
+                     color = state, label = state)) +
+  geom_line(size = 0.7, alpha = 0.8, show.legend = FALSE) +
+  scale_color_viridis_d() +
+  # better formatting for y-axis
+  scale_y_continuous(labels = label_comma()) +
+  # use minimal theme
+  theme_minimal()
+
+ggplot(data = df5, mapping = aes(x = date, y = total_doses_administered,
+                     color = state, label = state)) +
+  geom_line(size = 0.7, alpha = 0.8, show.legend = FALSE) +
+  scale_color_viridis_d() +
+  # better formatting for y-axis
+  scale_y_continuous(labels = label_comma()) +
+  # use minimal theme
+  theme_minimal()
 ```
 
